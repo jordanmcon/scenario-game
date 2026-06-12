@@ -10,15 +10,18 @@
  *   margin on sessions the CPO actually serves. CPO runs 4×150 kW stalls,
  *   prices high (suppressing demand via elasticity), repairs slowly.
  * - Owner: upfront capex; charging revenue net of processing, energy cost,
- *   monthly demand charges (battery cuts billed peak ~45%), O&M + network
+ *   monthly demand charges (battery cuts billed peak ~60%), O&M + network
  *   fees, plus the same in-store margin on served sessions.
+ *   Not modeled (deliberately conservative): capex incentives such as utility
+ *   make-ready and state grant programs, and clean-fuel credit revenue
+ *   (LCFS-style programs). Where available these further favor ownership.
  * - Happiness blends served ratio, uptime, and charging speed.
  */
 var HostOwnerSim = (function () {
   'use strict';
 
   var YR = 365, MAXD = 3650;
-  var KWH_PER_SESSION = 42;
+  var KWH_PER_SESSION = 35;
   var ELEC = 0.11;            // $/kWh wholesale
   var DEMAND_CHARGE = 18;     // $/kW-month
   var SAT = 120;              // demand saturation, sessions/day
@@ -57,7 +60,7 @@ var HostOwnerSim = (function () {
     return Math.min(1.8, Math.max(0.4, Math.pow(0.45 / price, 1.2)));
   }
   function capexOwn(c) {
-    return c.stalls * (30000 + 150 * c.kW)
+    return c.stalls * (50000 + 50 * c.kW)
          + Math.ceil(c.stalls / 6) * 100000
          + (c.batt ? 150000 : 0);
   }
@@ -94,7 +97,7 @@ var HostOwnerSim = (function () {
     var net;
     if (o.type === 'own') {
       var rev = kwh * o.price * (1 - PROC) + served * A.instore;
-      var peak = up * o.kW * Math.min(1, cap > 0 ? att / cap : 1) * 0.8 * (o.batt ? 0.55 : 1);
+      var peak = up * o.kW * Math.min(1, cap > 0 ? att / cap : 1) * 0.8 * (o.batt ? 0.40 : 1);
       P.monthPeak = Math.max(P.monthPeak, peak);
       net = rev - kwh * ELEC - (OM_PER_STALL_YR + NET_PER_STALL_YR) * o.stalls / 365;
       if (d % 30 === 29) { net -= P.monthPeak * DEMAND_CHARGE; P.monthPeak = 0; }
