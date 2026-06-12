@@ -49,7 +49,7 @@ var HostOwnerSim = (function () {
     var a = [], b = startSPD;
     for (var d = 0; d < MAXD; d++) {
       var season = 1 + 0.12 * Math.sin(2 * Math.PI * (d % 365) / 365);
-      var noise = Math.exp(0.22 * gauss());
+      var noise = Math.exp(0.22 * gauss() - 0.0242); // -sigma^2/2 mean-centers the lognormal
       a.push(b * season * noise);
       b += b * growth * (1 - b / SAT) / 365;   // logistic taper toward SAT
     }
@@ -100,7 +100,8 @@ var HostOwnerSim = (function () {
       var peak = up * o.kW * Math.min(1, cap > 0 ? att / cap : 1) * 0.8 * (o.batt ? 0.40 : 1);
       P.monthPeak = Math.max(P.monthPeak, peak);
       net = rev - kwh * ELEC - (OM_PER_STALL_YR + NET_PER_STALL_YR) * o.stalls / 365;
-      if (d % 30 === 29) { net -= P.monthPeak * DEMAND_CHARGE; P.monthPeak = 0; }
+      // 12 demand charges per year, on day-of-year marks (was every 30 days = 12.17/yr)
+      if ((d % 365) % 30 === 29 && (d % 365) < 360) { net -= P.monthPeak * DEMAND_CHARGE; P.monthPeak = 0; }
     } else {
       net = A.lease * o.stalls * Math.pow(1.02, d / 365) / 365 + served * A.instore;
     }
