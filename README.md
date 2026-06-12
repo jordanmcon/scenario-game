@@ -35,17 +35,25 @@ Deploy by serving the folder statically (GitHub Pages, Vercel, Netlify).
 
 ## Tuning notes (current constants)
 
-With the conservative growth ranges, the decision is genuinely contested —
-which scenario wins depends on the brief and on build discipline:
+Constants calibrated against operator P&L experience: 35 kWh/session, battery
+cuts billed demand peak ~60%, and dispenser capex uses a high fixed cost with
+a shallow per-kW slope ($50k + $50/kW), since real-world cost differences
+between 200 kW and 400 kW dispensers are modest. Capex incentives (utility
+make-ready, state grants) and clean-fuel credit revenue (LCFS-style programs)
+are deliberately **not** modeled — the debrief calls them out as unmodeled
+upside for ownership, keeping the on-screen owner line conservative.
 
-- Low-demand greenfield (10 SPD @ 15%): the lease tends to win a 10-year
-  horizon; demand saturates the decade around 40 SPD, and owner capex is hard
-  to recover. Overbuilding (6×250 kW) is badly punished here.
-- Mid sites (20 SPD @ 10%): a *right-sized* owner build (≈4×200 kW + battery)
-  beats the lease; an overbuilt one loses to it.
-- Mature corridors (30 SPD @ 5%): ownership wins across builds.
+Resulting meta (10-yr horizon, owner picks the best of several sensible
+builds, 24 runs per archetype):
 
-This makes the game a judgment exercise rather than a foregone conclusion.
-If ownership should win more broadly, the honest levers are the in-store
-margin default, the simulation horizon, or per-stall capex — all in `sim.js`
-constants at the top of the file.
+- Ownership wins ~100% of runs on every archetype from 15 SPD upward, by
+  +$75k (thin sites) to +$400k (mature corridors).
+- The thinnest greenfield (10 SPD @ 15%) still favors the lease by ~$100k
+  over 10 years — demand saturates the decade around 40 SPD.
+- At a 5-year horizon the lease wins essentially always: owner capex has not
+  paid back yet. Ownership is a long-horizon decision and the game shows the
+  J-curve honestly.
+- Right-sizing dominates: 4 stalls at 200 kW is the winning build nearly
+  everywhere. Note a model artifact: with 35 kWh sessions and the 18-minute
+  session floor, power above ~200 kW adds happiness but not throughput, so
+  high-power builds pay capex and demand charges for satisfaction alone.
