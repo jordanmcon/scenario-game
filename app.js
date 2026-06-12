@@ -133,9 +133,10 @@
         '. That is one outcome under one demand trace and one set of assumptions \u2014 not a law of EV charging.');
     }
 
-    if (yr === 1) {
-      s.push('Year one flatters the lease almost by definition: the owner path starts in a capex hole, and nothing about a twelve-month window says whether it climbs out. Treat this checkpoint as a starting position, not a verdict.');
-    } else if (P_own.payback !== null) {
+    if (yr === 5) {
+      s.push('Five years is usually mid-J-curve for an owner build: the capex hole is real and the growth that justifies it is still compounding. The more telling read at this checkpoint is the slope of the two lines, not their height \u2014 if the owner line is climbing faster than the lease line, the second five years tends to decide it.');
+    }
+    if (P_own.payback !== null) {
       s.push('The owner build recovered its capex around year ' + P_own.payback.toFixed(1) +
         '; everything after that point is the corridor\u2019s growth working for whoever owns the asset.');
     } else {
@@ -180,12 +181,10 @@
       ')</th><th>Sessions served (yr)</th><th>Lost (yr)</th></tr>' + rows + '</table>' +
       '<div style="font-size:19px">' + verdict + '</div>' +
       '<div class="debrief"><div class="dl">\u2605 Analyst debrief \u2605</div>' + narrative(yr) + '</div>';
-    if (day < 1825) $('bSkip5').style.display = 'inline-block';
     if (day < 3650) $('bSkip10').style.display = 'inline-block';
     $('bRestart').style.display = 'inline-block';
   }
   function run(toDay, perFrame) {
-    $('bSkip5').style.display = 'none';
     $('bSkip10').style.display = 'none';
     target = toDay; resetYearStats();
     if (timer) clearInterval(timer);
@@ -215,7 +214,7 @@
     $('stSim').style.display = 'block';
     $('summary').innerHTML = '';
     $('bRestart').style.display = 'none';
-    run(Sim.YR, 6);
+    run(1825, 12);
   }
 
   /* ---------- stage wiring ---------- */
@@ -230,7 +229,6 @@
   $('bBuild').addEventListener('click', function () {
     start(Object.assign({ chosen: 'own' }, syncCfg()));
   });
-  $('bSkip5').addEventListener('click', function () { run(1825, 30); });
   $('bSkip10').addEventListener('click', function () { run(3650, 45); });
   $('bRestart').addEventListener('click', function () {
     if (timer) clearInterval(timer); timer = null;
