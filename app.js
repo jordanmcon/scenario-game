@@ -112,6 +112,41 @@
   /* ---------- run loop ---------- */
   function resetYearStats() { Sim.resetYearStats(P_host); Sim.resetYearStats(P_own); }
   /* ---------- debrief narrative: explains the run without declaring universal truths ---------- */
+  /* ---------- counterfactuals: variants of the owner build on the SAME demand trace ---------- */
+  function cfgDesc(c) {
+    return c.stalls + '\u00d7' + c.kW + ' kW ' + (c.batt ? 'with' : 'without') + ' the battery';
+  }
+  function cfLabel(c, base) {
+    var s = (c.stalls !== base.stalls) ? 'a ' + c.stalls + '-stall version of this station' : 'this same station';
+    if (c.batt !== base.batt) s += c.batt ? ' with the battery' : ' without the battery';
+    return s;
+  }
+  function counterfactual() {
+    var base = P_own.o, cands = [], seen = {};
+    [Math.max(2, base.stalls - 2), base.stalls, Math.min(12, base.stalls + 2), 4].forEach(function (st) {
+      [true, false].forEach(function (b) {
+        var key = st + ':' + b;
+        if (seen[key] || (st === base.stalls && b === base.batt)) return;
+        seen[key] = 1;
+        cands.push({ stalls: st, kW: base.kW, price: base.price, batt: b });
+      });
+    });
+    var best = null;
+    var curHap = P_own.hapYN ? P_own.hapY / P_own.hapYN : 100;
+    cands.forEach(function (c) {
+      var P = Sim.makePath(Object.assign({ type: 'own', repair: A.ownRepair }, c));
+      for (var d = 0; d < day; d++) {
+        if (d % 365 === 0 && d > 0) Sim.resetYearStats(P); // mirror the main loop: hap = final-year
+        Sim.stepDay(P, d, demand, A);
+      }
+      var hap = P.hapYN ? P.hapY / P.hapYN : 100;
+      // only recommend designs that serve drivers at least as well — winning by
+      // turning customers away is not advice this analyst gives
+      if (hap >= curHap - 5 && (!best || P.cum > best.cum)) best = { cum: P.cum, cfg: c };
+    });
+    return best;
+  }
+
   function narrative(yr) {
     var lead = P_own.cum - P_host.cum;
     var scale = Math.max(Math.abs(P_own.cum), Math.abs(P_host.cum), 1);
@@ -121,6 +156,27 @@
     var hostLost = (P_host.lostY + P_host.servedY) > 0 ? P_host.lostY / (P_host.lostY + P_host.servedY) : 0;
     var ownLost = (P_own.lostY + P_own.servedY) > 0 ? P_own.lostY / (P_own.lostY + P_own.servedY) : 0;
     var s = [];
+
+    if (yr === 10) {
+      var base = P_own.o, cf = counterfactual();
+      var margin = Math.max(25000, 0.15 * Math.abs(P_own.cum));
+      var knob = cf && (cf.cfg.batt !== base.batt) && (cf.cfg.stalls !== base.stalls) ? 'the battery and sizing'
+               : cf && (cf.cfg.batt !== base.batt) ? 'the battery' : 'sizing';
+      if (P_own.cum <= P_host.cum && cf && cf.cum > P_host.cum) {
+        s.push('<b>MAIN TAKEAWAY:</b> the lease beat this particular station design \u2014 but not ownership itself. On this exact demand trace, ' +
+          (chosen === P_own ? cfLabel(cf.cfg, base) : 'an owner build of ' + cfgDesc(cf.cfg)) +
+          ' finishes around ' + fmt$(cf.cum) + ', ahead of the lease\u2019s ' + fmt$(P_host.cum) +
+          '. The decision that mattered here was ' + knob + ', not lease-versus-own.');
+      } else if (P_own.cum > P_host.cum && cf && cf.cum > P_own.cum + margin) {
+        s.push('<b>MAIN TAKEAWAY:</b> this design beats the lease \u2014 and ' + cfLabel(cf.cfg, base) +
+          ' beats it by more (' + fmt$(cf.cum) + ' vs ' + fmt$(P_own.cum) +
+          ' on the same demand). The knob that mattered was ' + knob + '.');
+      } else if (P_own.cum > P_host.cum) {
+        s.push('<b>MAIN TAKEAWAY:</b> this design holds up \u2014 we re-ran battery and sizing variants of the same station on this exact demand, and none of them does meaningfully better. Ownership wins this brief, and you sized it about right.');
+      } else {
+        s.push('<b>MAIN TAKEAWAY:</b> we re-ran battery and sizing variants of this station on the same demand, and none finishes ahead of the lease within ten years. On a corridor like this one, under these assumptions, taking the check is a defensible answer \u2014 and that\u2019s worth knowing before the capex, not after.');
+      }
+    }
 
     if (close) {
       s.push('In this run the two paths finished within shouting distance of each other (' +
