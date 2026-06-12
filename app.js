@@ -155,6 +155,7 @@
         '%) compounds in ways this model only gestures at: repeat visits, reviews, and brand association all ride on whether the chargers work when drivers arrive.');
     }
 
+    s.push('Also worth knowing: two real-world factors are deliberately left out of this math \u2014 capex incentives (utility make-ready and state grant programs) and clean-fuel credit revenue (LCFS-style programs in some markets). Where they apply, both can dramatically improve the economics of owning, so the owner line you see here errs on the conservative side.');
     s.push('The durable takeaway isn\u2019t which line finished higher \u2014 re-run the same choices and the gap will move \u2014 but which assumptions the outcome is sensitive to on a site like this one: demand growth, repair speed, and what a charging customer is worth inside the store. Those are answerable questions for a real site, with real traffic counts and a real tariff, and they deserve better data than a simulation\u2019s dice.');
     return s.join(' ');
   }
